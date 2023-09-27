@@ -14,34 +14,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class FileEncryptor {
 
-    public static void main(String[] args) {
-        if (args.length != 5) {
-            System.out.println("Usage: FileEncryptor <encrypt|decrypt> <inputFilePath> <outputFilePath>");
-            return;
-        }
 
-        String operation = args[0];
-        String inputFilePath = args[1];
-        String outputFilePath = args[2];
-        // String password = "YourPassword";
-        String password = args[3];
-        String salt = args[4];
-        //  String salt = "YourSalt";
-
-        try {
-            if ("encrypt".equalsIgnoreCase(operation)) {
-                encryptFile(inputFilePath, outputFilePath, password, salt);
-            } else if ("decrypt".equalsIgnoreCase(operation)) {
-                decryptFile(inputFilePath, outputFilePath, password, salt);
-            } else {
-                System.out.println("Invalid operation. Use 'encrypt' or 'decrypt'.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void encryptFile(String inputFilePath, String outputFilePath, String password, String salt)
+    public static void encryptFile(String inputFilePath, String outputFilePath, String password, String salt)
             throws Exception {
 
         FileInputStream fileInputStream = new FileInputStream(inputFilePath);
@@ -76,7 +50,7 @@ public class FileEncryptor {
         return cipher;
     }
 
-    private static void decryptFile(String inputFilePath, String outputFilePath, String password, String salt)
+    public static void decryptFile(String inputFilePath, String outputFilePath, String password, String salt)
             throws Exception {
 
         FileInputStream fileInputStream = new FileInputStream(inputFilePath);
