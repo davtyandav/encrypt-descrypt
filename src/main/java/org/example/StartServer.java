@@ -5,53 +5,51 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static org.example.FileEncryptor.decryptFile;
-import static org.example.FileEncryptor.encryptFile;
-
 
 public class StartServer {
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 5) {
-            System.out.println("Usage: StartServer <encrypt|decrypt> <inputFilePath> <outputFilePath> <password> <salt>");
+    public static void main(String[] args) throws Exception {
+
+        if (args.length != 3) {
+            System.out.println("Usage: StartServer <encrypt|decrypt> <inputFilePath> <outputFilePath>");
             return;
         }
-
         String operation = args[0];
         String inputFilePath = args[1];
         String outputFilePath = args[2];
-        String password = args[3];
-        String salt = args[4];
 
-        try {
-            if ("encrypt".equalsIgnoreCase(operation)) {
-                encryptFile(inputFilePath, outputFilePath, password, salt);
-            } else if ("decrypt".equalsIgnoreCase(operation)) {
-                decryptFile(inputFilePath, outputFilePath, password, salt);
-            } else {
-                System.out.println("Invalid operation. Use 'encrypt' or 'decrypt'.");
+        EncryptionConfig config = getProperties();
+        FileEncryptor fileEncryptor = new FileEncryptor(config);
+        switch (operation) {
+            case "encrypt" -> {
+                fileEncryptor.encryptFile(inputFilePath, outputFilePath);
+                System.out.println("Encryption completed.");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            case "decrypt" -> {
+                fileEncryptor.decryptFile(inputFilePath, outputFilePath);
+                System.out.println("Decryption completed.");
+            }
+            default -> System.err.println("Invalid operation. Use 'encrypt' or 'decrypt'.");
         }
 
-        try (InputStream inputStream = StartServer.class.getClassLoader().getResourceAsStream("property.txt")) {
+    }
+
+    private static EncryptionConfig getProperties() throws IOException {
+        try (InputStream inputStream = StartServer.class.getClassLoader().getResourceAsStream("configs.properties")) {
             Properties defaultProps = new Properties();
 
             defaultProps.load(inputStream);
 
-            String serialize = defaultProps.get("serialize").toString();
-            String inputPath = defaultProps.get("inputFile").toString();
-            String outputPath = defaultProps.get("outputFile").toString();
-            String pass = defaultProps.get("password").toString();
-            String saltProperty = defaultProps.get("salt").toString();
-            var x = 8;
+            String password = defaultProps.get("password").toString();
+            String salt = defaultProps.get("salt").toString();
+
+            return new EncryptionConfig(password, salt);
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-
     }
+
 }
 
 

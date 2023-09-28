@@ -14,62 +14,48 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class FileEncryptor {
 
+    private final EncryptionConfig encryptionConfig;
+    private static final int BUFFER_SIZE = 2048;
 
-    public static void encryptFile(String inputFilePath, String outputFilePath, String password, String salt)
-            throws Exception {
+    public FileEncryptor(EncryptionConfig encryptionConfig) {
+        this.encryptionConfig = encryptionConfig;
+    }
 
-        FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-        FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
+    public void encryptFile(String inputFilePath, String outputFilePath) throws Exception {
+        encrypt(inputFilePath, outputFilePath, Cipher.ENCRYPT_MODE);
+    }
 
-        Cipher cipher = getCipher(password, salt, Cipher.ENCRYPT_MODE);
+    public void decryptFile(String inputFilePath, String outputFilePath) throws Exception {
+        encrypt(inputFilePath, outputFilePath, Cipher.DECRYPT_MODE);
+    }
 
-        byte[] inputBytes = new byte[64];
-        int bytesRead;
-        while ((bytesRead = fileInputStream.read(inputBytes)) != -1) {
-            byte[] outputBytes = cipher.update(inputBytes, 0, bytesRead);
+    private void encrypt(String inputFilePath, String outputFilePath, int encryptMode) throws Exception {
+        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
+             FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
+
+            Cipher cipher = getCipher(encryptMode);
+
+            byte[] inputBytes = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = fileInputStream.read(inputBytes)) != -1) {
+                byte[] outputBytes = cipher.update(inputBytes, 0, bytesRead);
+                fileOutputStream.write(outputBytes);
+            }
+
+            byte[] outputBytes = cipher.doFinal();
             fileOutputStream.write(outputBytes);
         }
 
-        byte[] outputBytes = cipher.doFinal();
-        fileOutputStream.write(outputBytes);
-
-        fileInputStream.close();
-        fileOutputStream.close();
-        System.out.println("Encryption completed.");
     }
 
-    private static Cipher getCipher(String password, String salt, int encryptMode)
+    private Cipher getCipher(int encryptMode)
             throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException {
-        KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, 256);
+        KeySpec keySpec = new PBEKeySpec(encryptionConfig.password().toCharArray(), encryptionConfig.salt().getBytes(), 65536, 256);
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
         byte[] keyBytes = keyFactory.generateSecret(keySpec).getEncoded();
         SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
-
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(encryptMode, secretKey);
         return cipher;
-    }
-
-    public static void decryptFile(String inputFilePath, String outputFilePath, String password, String salt)
-            throws Exception {
-
-        FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-        FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
-
-        Cipher cipher = getCipher(password, salt, Cipher.DECRYPT_MODE);
-
-        byte[] inputBytes = new byte[64];
-        int bytesRead;
-        while ((bytesRead = fileInputStream.read(inputBytes)) != -1) {
-            byte[] outputBytes = cipher.update(inputBytes, 0, bytesRead);
-            fileOutputStream.write(outputBytes);
-        }
-
-        byte[] outputBytes = cipher.doFinal();
-        fileOutputStream.write(outputBytes);
-
-        fileInputStream.close();
-        fileOutputStream.close();
-        System.out.println("Decryption completed.");
     }
 }

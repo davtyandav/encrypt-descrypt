@@ -1,5 +1,0 @@
-serialize=encrypt
-inputFile=/
-outputFile=/
-password=password
-salt=salt
